@@ -118,15 +118,23 @@ async def handle_text(m: Message):
         f"{text}"
     )
     admin_id = next(iter(ADMIN_USER_IDS))
-    try:
-        await m.bot.forward_message(admin_id, m.chat.id, m.message_id)
-    except Exception:
-        await m.bot.send_message(admin_id, text)
-    await m.bot.send_message(
-        admin_id,
-        f"Пост от: {m.from_user.full_name}" + (f" (@{m.from_user.username})" if m.from_user.username else "") + f"\nID: {m.from_user.id}\nГород: {city_title(city)}",
-        reply_markup=kb(sid),
-    )
+    for admin_id in ADMIN_USER_IDS:
+        try:
+            await m.bot.forward_message(admin_id, m.chat.id, m.message_id)
+        except Exception:
+            try:
+                await m.bot.send_message(admin_id, text)
+            except Exception:
+                logging.warning(f"Failed to notify admin {admin_id} for text")
+                continue
+        try:
+            await m.bot.send_message(
+                admin_id,
+                f"Пост от: {m.from_user.full_name}" + (f" (@{m.from_user.username})" if m.from_user.username else "") + f"\nID: {m.from_user.id}\nГород: {city_title(city)}",
+                reply_markup=kb(sid),
+            )
+        except Exception:
+            logging.warning(f"Failed to send admin card to {admin_id}")
     await m.answer("✅ Принял. Ждёт решения админа.")
 
 @dp.message(F.photo & ~F.media_group_id)
@@ -148,16 +156,23 @@ async def handle_single_photo(m: Message):
         media=[("photo", file_id)],
         status="pending",
     )
-    admin_id = next(iter(ADMIN_USER_IDS))
-    try:
-        await m.bot.forward_message(admin_id, m.chat.id, m.message_id)
-    except Exception:
-        await m.bot.send_photo(admin_id, file_id, caption=caption or "")
-    await m.bot.send_message(
-        admin_id,
-        f"Пост от: {m.from_user.full_name}" + (f" (@{m.from_user.username})" if m.from_user.username else "") + f"\nID: {m.from_user.id}\nГород: {city_title(city)}",
-        reply_markup=kb(sid),
-    )
+    for admin_id in ADMIN_USER_IDS:
+        try:
+            await m.bot.forward_message(admin_id, m.chat.id, m.message_id)
+        except Exception:
+            try:
+                await m.bot.send_photo(admin_id, file_id, caption=caption or "")
+            except Exception:
+                logging.warning(f"Failed to notify admin {admin_id} for photo")
+                continue
+        try:
+            await m.bot.send_message(
+                admin_id,
+                f"Пост от: {m.from_user.full_name}" + (f" (@{m.from_user.username})" if m.from_user.username else "") + f"\nID: {m.from_user.id}\nГород: {city_title(city)}",
+                reply_markup=kb(sid),
+            )
+        except Exception:
+            logging.warning(f"Failed to send admin card to {admin_id}")
     await m.answer("✅ Фото принято. Ждёт решения админа.")
 
 @dp.message(F.video & ~F.media_group_id)
@@ -179,16 +194,23 @@ async def handle_single_video(m: Message):
         media=[("video", file_id)],
         status="pending",
     )
-    admin_id = next(iter(ADMIN_USER_IDS))
-    try:
-        await m.bot.forward_message(admin_id, m.chat.id, m.message_id)
-    except Exception:
-        await m.bot.send_video(admin_id, file_id, caption=caption or "")
-    await m.bot.send_message(
-        admin_id,
-        f"Пост от: {m.from_user.full_name}" + (f" (@{m.from_user.username})" if m.from_user.username else "") + f"\nID: {m.from_user.id}\nГород: {city_title(city)}",
-        reply_markup=kb(sid),
-    )
+    for admin_id in ADMIN_USER_IDS:
+        try:
+            await m.bot.forward_message(admin_id, m.chat.id, m.message_id)
+        except Exception:
+            try:
+                await m.bot.send_video(admin_id, file_id, caption=caption or "")
+            except Exception:
+                logging.warning(f"Failed to notify admin {admin_id} for video")
+                continue
+        try:
+            await m.bot.send_message(
+                admin_id,
+                f"Пост от: {m.from_user.full_name}" + (f" (@{m.from_user.username})" if m.from_user.username else "") + f"\nID: {m.from_user.id}\nГород: {city_title(city)}",
+                reply_markup=kb(sid),
+            )
+        except Exception:
+            logging.warning(f"Failed to send admin card to {admin_id}")
     await m.answer("✅ Видео принято. Ждёт решения админа.")
 
 async def _finalize_album(key: Tuple[int, str]):
@@ -210,7 +232,6 @@ async def _finalize_album(key: Tuple[int, str]):
         media=items,
         status="pending",
     )
-    admin_id = next(iter(ADMIN_USER_IDS))
     medias = []
     for i, (kind, fid) in enumerate(items):
         if kind == "photo":
@@ -223,12 +244,16 @@ async def _finalize_album(key: Tuple[int, str]):
                 medias.append(InputMediaVideo(media=fid, caption=caption))
             else:
                 medias.append(InputMediaVideo(media=fid))
-    await m.bot.send_media_group(admin_id, media=medias)
-    await m.bot.send_message(
-        admin_id,
-        f"Пост от: {m.from_user.full_name}" + (f" (@{m.from_user.username})" if m.from_user.username else "") + f"\nID: {m.from_user.id}\nГород: {city_title(city)}",
-        reply_markup=kb(sid),
-    )
+    for admin_id in ADMIN_USER_IDS:
+        try:
+            await m.bot.send_media_group(admin_id, media=medias)
+            await m.bot.send_message(
+                admin_id,
+                f"Пост от: {m.from_user.full_name}" + (f" (@{m.from_user.username})" if m.from_user.username else "") + f"\nID: {m.from_user.id}\nГород: {city_title(city)}",
+                reply_markup=kb(sid),
+            )
+        except Exception:
+            logging.warning(f"Failed to notify admin {admin_id} for album")
     MEDIA_GROUPS.pop(key, None)
 
 @dp.message(F.photo & F.media_group_id)
