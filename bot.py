@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 from dataclasses import dataclass
-from typing import Dict, Optional, List, Tuple
+from typing import Dict, Optional, List, Tuple, Set
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart
@@ -16,7 +16,8 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise RuntimeError("BOT_TOKEN not found. Put it into .env file")
 
-ADMIN_USER_IDS = {7868363667}
+admin_env = os.getenv("ADMIN_USER_IDS", "7868363667")
+ADMIN_USER_IDS: Set[int] = {int(x) for x in admin_env.split(",") if x.strip()}
 
 CITY_CONFIG = {
     "muc": {"title": "Мюнхен", "channel_id": -1002219465811},
@@ -42,6 +43,7 @@ CITY_CONFIG = {
     "man": {"title": "Мангейм", "channel_id": -1002705598877},
     "dre": {"title": "Дрезден", "channel_id": -1003809886365},
     "mrb": {"title": "Марбург/Гиссен", "channel_id": -1002488276982},
+    "han": {"title": "Ганновер", "channel_id": -1003131952570},
 }
 
 USER_CITY: Dict[int, str] = {}
