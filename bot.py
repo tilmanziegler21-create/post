@@ -44,6 +44,7 @@ CITY_CONFIG = {
     "dre": {"title": "Дрезден", "channel_id": -1003809886365},
     "mrb": {"title": "Марбург/Гиссен", "channel_id": -1002488276982},
     "han": {"title": "Ганновер", "channel_id": -1003131952570},
+    "wrz": {"title": "Вюрцбург", "channel_id": -1003893240209},
 }
 
 USER_CITY: Dict[int, str] = {}
