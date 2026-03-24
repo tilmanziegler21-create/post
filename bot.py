@@ -41,11 +41,11 @@ CITY_CONFIG = {
     "nue": {"title": "Нюрнберг", "channel_id": -1002741882907},
     "wib": {"title": "Висбаден", "channel_id": -1002807012302},
     "man": {"title": "Мангейм", "channel_id": -1002705598877},
-    "dre": {"title": "Дрезден", "channel_id": -10028118128201},
     "mrb": {"title": "Марбург/Гиссен", "channel_id": -1002488276982},
     "han": {"title": "Ганновер", "channel_id": -1003131952570},
     "wrz": {"title": "Вюрцбург", "channel_id": -1003893240209},
     "kblz": {"title": "Кобленц", "channel_id": -1003607432320}, 
+    "dre": {"title": "Дрезден", "channel_id": -10028118128201},
 }
 
 USER_CITY: Dict[int, str] = {}
