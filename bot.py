@@ -8,6 +8,7 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaVideo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -78,6 +79,20 @@ def city_title(code: str) -> str:
 
 dp = Dispatcher()
 
+async def verify_channel_access(bot: Bot, channel_id: int) -> Tuple[bool, str]:
+    try:
+        chat = await bot.get_chat(channel_id)
+    except TelegramBadRequest as e:
+        return False, f"Chat not found: {e}"
+    try:
+        me = await bot.get_me()
+        member = await bot.get_chat_member(channel_id, me.id)
+        if member.status not in ("administrator", "creator"):
+            return False, "Bot is not admin in the channel"
+    except TelegramBadRequest:
+        # Some channels may hide members; still attempt send
+        pass
+    return True, ""
 @dp.message(CommandStart())
 async def start(m: Message, command: CommandStart):
     arg = (command.args or "").strip().lower()
@@ -324,22 +339,40 @@ async def publish(cb: CallbackQuery):
         await cb.answer(f"Уже обработано: {s.status}", show_alert=True)
         return
     channel_id = CITY_CONFIG[s.city_code]["channel_id"]
-    if s.media:
-        medias = []
-        for i, (kind, fid) in enumerate(s.media):
-            if kind == "photo":
-                if i == 0 and s.text:
-                    medias.append(InputMediaPhoto(media=fid, caption=s.text))
-                else:
-                    medias.append(InputMediaPhoto(media=fid))
-            elif kind == "video":
-                if i == 0 and s.text:
-                    medias.append(InputMediaVideo(media=fid, caption=s.text))
-                else:
-                    medias.append(InputMediaVideo(media=fid))
-        await cb.bot.send_media_group(channel_id, media=medias)
-    else:
-        await cb.bot.send_message(channel_id, s.text or "")
+    ok, reason = await verify_channel_access(cb.bot, channel_id)
+    if not ok:
+        await cb.message.reply(
+            f"❗️Не могу публиковать в канал {city_title(s.city_code)} ({channel_id}).\n"
+            f"Причина: {reason}\n"
+            f"Добавьте бота администратором канала и проверьте ID (-100...)."
+        )
+        await cb.answer("Ошибка доступа к каналу", show_alert=True)
+        return
+    try:
+        if s.media:
+            medias = []
+            for i, (kind, fid) in enumerate(s.media):
+                if kind == "photo":
+                    if i == 0 and s.text:
+                        medias.append(InputMediaPhoto(media=fid, caption=s.text))
+                    else:
+                        medias.append(InputMediaPhoto(media=fid))
+                elif kind == "video":
+                    if i == 0 and s.text:
+                        medias.append(InputMediaVideo(media=fid, caption=s.text))
+                    else:
+                        medias.append(InputMediaVideo(media=fid))
+            await cb.bot.send_media_group(channel_id, media=medias)
+        else:
+            await cb.bot.send_message(channel_id, s.text or "")
+    except (TelegramBadRequest, TelegramForbiddenError) as e:
+        await cb.message.reply(
+            f"❗️Не удалось отправить в канал: {city_title(s.city_code)}\n"
+            f"Причина: {e}\n"
+            f"Проверьте, что бот добавлен администратором канала и ID корректный (формат -100…)."
+        )
+        await cb.answer("Ошибка публикации", show_alert=True)
+        return
     s.status = "approved"
     await cb.message.edit_reply_markup(reply_markup=None)
     await cb.message.reply(
